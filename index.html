@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Excel to QBO Converter</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<style>
+  /* 1. Page Setup - Center everything with a nice background */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* 2. The Main Card Container */
+/* Note: You will need to wrap your HTML in a <div class="card"> */
+.card {
+  background: white;
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* 3. Heading Styling */
+h1 {
+  color: #1a202c;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  margin-top: 0;
+  letter-spacing: -0.5px;
+}
+
+/* 4. Input Fields Styling */
+/* 1. The Container for each row */
+.input-group {
+  display: flex;
+  align-items: center;    /* Vertically centers label and input */
+  justify-content: flex-end; /* Aligns content to the right so inputs line up */
+  margin-bottom: 12px;
+}
+
+/* 2. Label Styling */
+.input-group span {
+  font-size: 0.9rem;
+  color: #4a5568;
+  font-weight: 600;
+  margin-right: 15px;     /* Space between text and input */
+  flex: 1;                /* Allows text to take up space */
+  text-align: right;      /* Better alignment for labels */
+}
+
+/* 3. Input Styling */
+.input-group input:not([type="checkbox"]) {
+  flex: 2;                /* Makes the input wider than the label */
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  max-width: 200px;       /* Keeps inputs from getting too long */
+}
+/* Focus State - Glow effect when clicking an input */
+input:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+/* Highlight fields that have content (standard browser behavior, but styled) */
+input:not(:placeholder-shown):not([type="checkbox"]) {
+  background-color: #f8fafc;
+  border-color: #cbd5e0;
+}
+
+input {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 5. The Download Button */
+#downloadBtn {
+  width: 100%;
+  padding: 12px;
+  background-color: #2c974b; /* QuickBooks/Excel Green */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.2s ease;
+  margin-top: 10px;
+}
+
+/* Hover effect */
+#downloadBtn:hover:not(:disabled) {
+  background-color: #227c3c;
+  transform: translateY(-1px);
+}
+
+/* Active click effect */
+#downloadBtn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Disabled State */
+#downloadBtn:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Utility to hide the old <br> tags if you use the Flex layout */
+br {
+  display: none;
+}
+
+/* 1. Container for the checkbox row */
+.checkbox-row {
+  display: flex;                /* Aligns label and box in a row */
+  justify-content: space-between; /* Pushes label left, box right */
+  align-items: center;          /* Vertically centers them */
+  padding: 12px;
+  background-color: #f7fafc;    /* Light gray background for contrast */
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  margin-bottom: 20px;          /* Space before the button */
+  cursor: pointer;              /* Shows hand icon on hover */
+  transition: background-color 0.2s;
+}
+
+/* Hover effect for the whole row */
+.checkbox-row:hover {
+  background-color: #edf2f7;
+}
+
+/* 2. Label styling override */
+/* We reset the margin we put on generic spans earlier */
+.checkbox-row span {
+  margin-bottom: 0; 
+  color: #2d3748;
+  font-weight: 500;
+}
+
+/* 3. The Checkbox itself */
+.checkbox-row input[type="checkbox"] {
+  width: 20px;         /* Make it nice and big */
+  height: 20px;
+  margin: 0;           /* Remove default margins */
+  cursor: pointer;
+  accent-color: #2c974b; /* MAKES IT GREEN (matches your button) */
+}
+
+/* Container for label + icon */
+.label-with-info {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  margin-left: 6px;
+  color: #a0aec0;
+  cursor: help;
+  font-size: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Tooltip text (hidden by default) */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 180px;
+  background-color: #2d3748;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position above the icon */
+  left: 50%;
+  margin-left: -90px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.75rem;
+  font-weight: normal;
+  line-height: 1.2;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Tooltip arrow */
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #2d3748 transparent transparent transparent;
+}
+
+/* Show the tooltip on hover */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* GitHub Link Styling */
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 25px;
+  font-size: 0.8rem;
+  color: #718096;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.github-link:hover {
+  color: #2d3748;
+}
+</style>
+
+<body>
+
+  <div class="card">
+    <h1>Excel &rarr; QBO</h1>
+    
+    <div class="input-group">
+      <div style="text-align: left; margin-bottom: 15px;">
+        <span>Select File:</span>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+      </div>
+    </div>
+
+    <div class="input-group">
+      <span class="label-with-info">
+        Account ID:
+        <div class="tooltip">ⓘ<span class="tooltiptext">The bank account number or unique ID used in your QBO mapping.</span></div>
+      </span>
+      <input id="accountId" type="text" placeholder="Required" required />
+    </div>
+
+    <div class="input-group">
+      <span class="label-with-info">
+        Last 5 of CC:
+        <div class="tooltip">ⓘ<span class="tooltiptext">Used by QuickBooks to identify which credit card this statement belongs to. 
+          Amex doesnt always use just this number.</span></div>
+      </span>
+      <input id="lastFive" type="text" placeholder="12345" required />
+    </div>
+
+    <div class="input-group">
+      <span class="label-with-info">
+        Balance:
+        <div class="tooltip">ⓘ<span class="tooltiptext">The ledger balance to show in qb bank feeds.</span></div>
+      </span>
+      <input id="balance" type="number" placeholder="0.00" />
+    </div>
+
+    <div class="checkbox-row">
+      <span class="label-with-info">
+        Randomize Blank FITID:
+        <div class="tooltip">ⓘ<span class="tooltiptext">Generates a unique ID for transactions missing one to prevent duplicates in QBO.</span></div>
+      </span>
+      <input id="randomizeFITID" type="checkbox" checked />
+    </div>
+
+    <button id="downloadBtn" disabled>Download QBO</button>
+
+    <a href="https://github.com/Naftali-Unified/amex-qb-converter" class="github-link" target="_blank">
+      <svg height="16" width="16" viewBox="0 0 16 16"><path fill="#718096" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+      View on GitHub
+    </a>
+  </div>
+
+  <script>
+    // 1. Identify the elements we want to persist
+    const fieldsToSave = ['accountId', 'lastFive', 'randomizeFITID'];
+
+    // 2. Function to Load data on page start
+    window.addEventListener('load', () => {
+      fieldsToSave.forEach(id => {
+        const savedValue = localStorage.getItem(id);
+        if (savedValue !== null) {
+          const element = document.getElementById(id);
+          
+          if (element.type === 'checkbox') {
+            element.checked = savedValue === 'true';
+          } else {
+            element.value = savedValue;
+          }
+        }
+      });
+      
+      // If you have a validation function (like checkForm), run it now 
+      // to see if the button should be enabled immediately
+      if (typeof checkForm === "function") checkForm();
+    });
+
+    // 3. Function to Save data whenever it changes
+    document.addEventListener('input', (event) => {
+      if (fieldsToSave.includes(event.target.id)) {
+        const element = event.target;
+        const value = element.type === 'checkbox' ? element.checked : element.value;
+        localStorage.setItem(element.id, value);
+      }
+    });
+
+    const fileInput = document.getElementById('fileInput');
+    const accountId = document.getElementById('accountId');
+    const lastFive = document.getElementById('lastFive');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    function checkForm() {
+      // Button is enabled ONLY if File, AccountID, and LastFive are all filled
+      if (fileInput.value && accountId.value && lastFive.value.length >= 5) {
+        downloadBtn.disabled = false;
+      } else {
+        downloadBtn.disabled = true;
+      }
+    }
+
+    // Listen for changes on all inputs
+    fileInput.addEventListener('change', checkForm);
+    accountId.addEventListener('input', checkForm);
+    lastFive.addEventListener('input', checkForm);
+    let rows = [];
+
+    document.getElementById("fileInput").addEventListener("change", handleFile);
+
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const data = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(data, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+
+        // Get raw rows (array-of-arrays)
+        const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        // Drop first 14 rows
+        const trimmed = raw.slice(14);
+
+        // Map fixed columns
+        rows = trimmed.map((r, i) => ({
+          dt: r[13],     // Column N
+          amount: parseAmount(r[15]), // Column P - now handles $ and commas
+          fitid: r[14],  // Column O
+          name: r[16],   // Column Q
+          memo: r[17]    // Column R
+        })).filter(r => r.amount !== 0 && !isNaN(r.amount) && r.dt);
+
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseAmount(value) {
+      if (typeof value === 'number') return value;
+      if (!value) return 0;
+
+      // Remove $, commas, and any other non-numeric characters except . and -
+      const cleaned = String(value).replace(/[$,]/g, '').trim();
+      return parseFloat(-cleaned) || 0;
+    }
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      const { xml, startDate, endDate } = generateQBO(rows, document.getElementById("accountId").value, document.getElementById("lastFive").value, document.getElementById("balance").value);
+      downloadFile(xml, startDate + "-" + endDate + ".qbo");
+    });
+
+    function generateQBO(rows, accountId, lastFive, balance) {
+      const now = formatOFXDate(new Date());
+
+      // Get earliest and latest transaction dates
+      const dates = rows.map(r => parseDate(r.dt)).filter(d => !isNaN(d.getTime()));
+      const dtStart = dates.length > 0 ? formatOFXDate(new Date(Math.min(...dates))) : now;
+      const dtEnd = dates.length > 0 ? formatOFXDate(new Date(Math.max(...dates))) : now;
+
+      if (!balance)
+        balance = 0;
+      
+      const txns = rows.map((r, i) => `<STMTTRN>
+<TRNTYPE>${r.amount < 0 ? "DEBIT" : "CREDIT"}</TRNTYPE>
+<DTPOSTED>${formatOFXDate(parseDate(r.dt))}</DTPOSTED>
+<TRNAMT>${r.amount.toFixed(2)}</TRNAMT>
+<FITID>${
+  r.fitid !== "0000000000000"
+    ? r.fitid
+    : (document.getElementById("randomizeFITID").checked
+        ? "RND" + (Date.now() + i)
+        : r.fitid)
+}</FITID>
+<NAME>${String(cleanString(r.name)).replace(/\s\s+/gm, "  ").replace(/[^a-zA-Z0-9#*]/g, '').substring(0, 32)}</NAME>
+${(() => {
+  const memo = String(cleanString(r.memo))
+    .replace(/[^a-zA-Z0-9#*]/g, '')
+    .substring(0, 255);
+  if (memo)
+    return `<MEMO>${memo}</MEMO>`;
+})()}
+</STMTTRN>`).join("\n");
+
+const xml = `<?xml version="1.0" standalone="no"?><?OFX OFXHEADER="200" VERSION="202" SECURITY="NONE" OLDFILEUID="NONE" NEWFILEUID="NONE"?>
+<OFX>
+<SIGNONMSGSRSV1>
+    <SONRS>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+        <MESSAGE>Login Successful!</MESSAGE>
+      </STATUS>
+      <DTSERVER>${now}</DTSERVER>
+      <LANGUAGE>ENG</LANGUAGE>
+      <FI>
+        <ORG>AMEX</ORG>
+        <FID>${accountId}</FID>
+      </FI>
+      <INTU.BID>${accountId}</INTU.BID>
+    </SONRS>
+  </SIGNONMSGSRSV1>
+  <CREDITCARDMSGSRSV1>
+    <CCSTMTTRNRS>
+      <TRNUID>0</TRNUID>
+      <STATUS>
+        <CODE>0</CODE>
+        <SEVERITY>INFO</SEVERITY>
+      </STATUS>
+      <CCSTMTRS>
+        <CURDEF>USD</CURDEF>
+        <CCACCTFROM>
+          <ACCTID>${lastFive}</ACCTID>
+        </CCACCTFROM>
+        <BANKTRANLIST>
+          <DTSTART>${dtStart}</DTSTART>
+          <DTEND>${dtEnd}</DTEND>
+          ${txns}
+          </BANKTRANLIST>
+          <LEDGERBAL>
+          <BALAMT>${balance}</BALAMT>
+          <DTASOF>${now}</DTASOF>
+        </LEDGERBAL>
+      </CCSTMTRS>
+    </CCSTMTTRNRS>
+  </CREDITCARDMSGSRSV1>
+</OFX>`;
+
+const startDate = dates.length > 0 ? new Date(Math.min(...dates)).toDateString() : now;
+const endDate = dates.length > 0 ? new Date(Math.max(...dates)).toDateString() : now;
+
+      return {xml, startDate, endDate}
+    }
+
+    function parseDate(dateValue) {
+      // Handle Excel serial date numbers
+      if (typeof dateValue === 'number') {
+        const date = new Date((dateValue - 25569) * 86400 * 1000);
+        return date;
+      }
+      // Handle string dates
+      return new Date(dateValue);
+    }
+
+    function formatOFXDate(d) {
+      if (!d || isNaN(d.getTime())) {
+        d = new Date();
+      }
+      const p = n => String(n).padStart(2, "0");
+      return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) +
+        p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + ".000";
+    }
+
+    function escapeXML(s = "") {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function cleanString(s = "") {
+      return String(s).replace(/[^a-zA-Z0-9#* ]/g, '');
+    }
+
+    function downloadFile(content, filename) {
+      const blob = new Blob([content], { type: "application/x-ofx" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  </script>
+
+</body>
+
+</html>
