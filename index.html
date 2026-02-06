@@ -413,10 +413,10 @@ br {
         ? "RND" + (Date.now() + i)
         : r.fitid)
 }</FITID>
-<NAME>${String(cleanString(r.name)).replace(/\s\s+/gm, "  ").replace(/[^a-zA-Z0-9#*]/g, '').substring(0, 32)}</NAME>
+<NAME>${String(cleanString(r.name)).replace(/\s\s+/gm, "  ").replace(/[^a-zA-Z0-9#* ]/g, '').substring(0, 32)}</NAME>
 ${(() => {
   const memo = String(cleanString(r.memo))
-    .replace(/[^a-zA-Z0-9#*]/g, '')
+    .replace(/[^a-zA-Z0-9#* ]/g, '')
     .substring(0, 255);
   if (memo)
     return `<MEMO>${memo}</MEMO>`;
