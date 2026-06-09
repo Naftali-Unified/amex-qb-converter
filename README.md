@@ -2,6 +2,10 @@
 
 A simple, client-side web tool that converts American Express Excel statements into OFX (QBO) format for seamless import into QuickBooks.
 
+## 🚀 Quick Start
+
+Visit **[amex-qb-converter.pages.dev](https://amex-qb-converter.pages.dev)** to use the tool right now!
+
 ## Features
 
 - 🚀 **Client-side Processing** - No server needed, all conversion happens in your browser
@@ -14,7 +18,7 @@ A simple, client-side web tool that converts American Express Excel statements i
 ## How to Use
 
 1. **Export Your Statement**: Download your American Express statement as an Excel file
-2. **Open the Converter**: Navigate to the tool (hosted at `index.html` in this repository)
+2. **Open the Converter**: Go to [amex-qb-converter.pages.dev](https://amex-qb-converter.pages.dev)
 3. **Fill in Required Fields**:
    - **Select File**: Choose your Amex Excel export
    - **Account ID**: Your bank account number or unique ID used in QuickBooks mapping
